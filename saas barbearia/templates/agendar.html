@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ loja.nome_loja }} - Agendar</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* --- PERSONALIZAÇÃO DINÂMICA --- */
+        :root {
+            --bg-color: {{ loja.cor_fundo }};
+            --btn-color: {{ loja.cor_botao }};
+            /* Se tiver imagem, usa ela. Se não, usa none */
+            --bg-image: {% if loja.img_fundo %}url("{{ url_for('static', filename='uploads/' + loja.img_fundo) }}"){% else %}none{% endif %};
+        }
+
+        /* --- MOBILE FIRST ESSENTIALS --- */
+        * {
+            -webkit-tap-highlight-color: transparent; /* Remove brilho azul no toque */
+            box-sizing: border-box;
+        }
+
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background-color: var(--bg-color);
+            background-image: var(--bg-image);
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            margin: 0; 
+            min-height: 100vh; 
+            display: flex; 
+            flex-direction: column; /* Importante para logo ficar em cima */
+            justify-content: flex-start; /* Melhor para mobile que rola */
+            align-items: center; 
+            padding-top: 30px; 
+            padding-bottom: 30px;
+            
+            /* Rolagem macia no iOS */
+            -webkit-overflow-scrolling: touch; 
+            overscroll-behavior-y: none;
+        }
+
+        /* Overlay escuro suave para garantir leitura */
+        body::before {
+            content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.05); z-index: -1; pointer-events: none;
+        }
+
+        /* Inputs não dão zoom no iPhone */
+        input, select, textarea, button { font-size: 16px !important; }
+
+        /* --- LOGO --- */
+        .logo-container { margin-bottom: 20px; text-align: center; }
+        .logo-img { 
+            width: 100px; height: 100px; 
+            border-radius: 50%; 
+            border: 4px solid white; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15); 
+            object-fit: cover;
+            background: white;
+        }
+
+        .box { 
+            background: white; 
+            padding: 25px; 
+            border-radius: 20px; 
+            width: 92%; 
+            max-width: 420px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
+            position: relative; 
+        }
+        
+        h2 { text-align: center; color: #333; margin-top: 0; font-size: 1.4em; margin-bottom: 25px; font-weight: 700; }
+        
+        /* Inputs Gerais */
+        label { font-weight: 600; display: block; margin-top: 20px; color: #444; font-size: 0.95em; margin-bottom: 8px; }
+        input[type="text"] { width: 100%; padding: 14px; border: 1px solid #ddd; border-radius: 12px; box-sizing: border-box; font-size: 16px; background: #f9f9f9; transition: 0.2s; }
+        input[type="text"]:focus { border-color: var(--btn-color); outline: none; background: white; }
+        
+        /* Novo Campo de Texto (Textarea) para Observação */
+        textarea { width: 100%; padding: 14px; border: 1px solid #ddd; border-radius: 12px; box-sizing: border-box; font-size: 16px; background: #f9f9f9; font-family: inherit; resize: vertical; margin-top: 5px; }
+        textarea:focus { border-color: var(--btn-color); outline: none; background: white; }
+
+        /* Lista de Serviços */
+        .servico-item { 
+            display: flex; align-items: center; 
+            background: #fff; border: 1px solid #eee; 
+            padding: 14px; border-radius: 12px; 
+            margin-bottom: 8px; cursor: pointer; transition: 0.2s; 
+            touch-action: manipulation; /* Melhor toque */
+        }
+        .servico-item:active { background: #f0f0f0; transform: scale(0.98); }
+        .servico-item input { margin-right: 15px; transform: scale(1.3); cursor: pointer; accent-color: var(--btn-color); }
+        .servico-nome { flex: 1; font-weight: 500; font-size: 15px; }
+        .servico-preco { font-weight: bold; color: var(--btn-color); }
+
+        /* --- CONTAINER DO CARROSSEL DE DATAS --- */
+        .date-selector-wrapper { 
+            display: flex; align-items: center; gap: 8px; 
+            background: #f8f9fa; padding: 8px; 
+            border-radius: 16px; border: 1px solid #eee; 
+        }
+
+        .scroll-datas { 
+            display: flex; overflow-x: auto; gap: 8px; padding: 5px 0; 
+            flex: 1; scroll-behavior: smooth; 
+            scrollbar-width: none; -ms-overflow-style: none; 
+        }
+        .scroll-datas::-webkit-scrollbar { display: none; }
+
+        /* Botões de Navegação */
+        .nav-btn { 
+            background: white; border: 1px solid #ddd; border-radius: 50%; 
+            width: 40px; height: 40px; 
+            display: flex; align-items: center; justify-content: center; 
+            cursor: pointer; color: #555; transition: 0.2s; flex-shrink: 0; 
+        }
+        .nav-btn:active { background: #eee; }
+        
+        .calendar-trigger { background: #fff; color: var(--btn-color); border: 2px solid var(--btn-color); }
+
+        /* Cartão do Dia */
+        .card-data { 
+            min-width: 68px; background: #fff; border: 1px solid #ddd; border-radius: 12px; 
+            padding: 10px 5px; text-align: center; cursor: pointer; 
+            transition: all 0.2s ease; user-select: none; 
+        }
+        .card-data:active { transform: scale(0.95); }
+        .card-data.selected { background: var(--btn-color); color: white; border-color: var(--btn-color); box-shadow: 0 4px 10px rgba(0,0,0,0.2); transform: scale(1.05); }
+        
+        .card-dia-semana { font-size: 0.75em; text-transform: uppercase; margin-bottom: 4px; font-weight: 700; opacity: 0.8; }
+        .card-dia-numero { font-size: 1.4em; font-weight: 800; }
+
+        /* Modal */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(2px); }
+        .modal-content { background: white; width: 85%; max-width: 320px; padding: 25px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); text-align: center; animation: fadeIn 0.2s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+        
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .btn-close { background: #f0f0f0; border: none; font-size: 24px; cursor: pointer; color: #555; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        
+        .months-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-height: 350px; overflow-y: auto; }
+        .btn-month { 
+            padding: 15px 5px; background: #f8f9fa; border: 1px solid #eee; border-radius: 12px; 
+            cursor: pointer; font-weight: 600; color: #444; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+        }
+        .btn-month small { font-size: 0.75em; color: #888; margin-top: 4px; font-weight: normal; }
+        .btn-month:active { background: #e0e0e0; }
+
+        /* Grid Horários */
+        .horarios-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 15px; }
+        .btn-hora { 
+            padding: 14px 2px; background: #fff; border: 1px solid #ddd; border-radius: 10px; 
+            cursor: pointer; text-align: center; font-size: 14px; font-weight: 600; color: #333;
+            transition: 0.1s; 
+        }
+        .btn-hora:active { transform: scale(0.95); background: #f5f5f5; }
+        .btn-hora.selected { background: var(--btn-color); color: white; border-color: var(--btn-color); font-weight: bold; transform: scale(1.05); box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+        
+        .btn-confirmar { 
+            width: 100%; padding: 18px; background: var(--btn-color); color: white; border: none; border-radius: 14px; 
+            font-size: 16px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;
+            margin-top: 35px; cursor: pointer; display: none; 
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15); transition: transform 0.1s;
+        }
+        .btn-confirmar:active { transform: scale(0.98); }
+
+        .loading { text-align: center; color: #888; font-size: 0.95em; grid-column: span 4; padding: 30px; }
+        
+        /* Ajuste fino para telas muito pequenas */
+        @media (max-width: 360px) {
+            .box { padding: 15px; width: 100%; box-shadow: none; border-radius: 0; }
+            .horarios-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+    </style>
+</head>
+<body>
+
+    {% if loja.img_logo %}
+    <div class="logo-container">
+        <img src="{{ url_for('static', filename='uploads/' + loja.img_logo) }}" class="logo-img">
+    </div>
+    {% endif %}
+
+    <div class="box">
+        <h2>{{ loja.nome_loja }}</h2>
+        
+        <form action="/confirmar_agendamento/{{ loja.id }}" method="POST">
+            <label>1. Seu Nome</label>
+            <input type="text" name="cliente" required placeholder="Digite seu nome completo">
+
+            <label>2. Serviços</label>
+            <div id="lista-servicos">
+                {% for s in servicos %}
+                <label class="servico-item">
+                    <input type="checkbox" name="servico_ids" value="{{ s.id }}" onchange="resetarEBuscarHorarios()">
+                    <span class="servico-nome">{{ s.nome }} <small style="color:#888;">({{ s.duracao }}min)</small></span>
+                    <span class="servico-preco">R$ {{ s.preco }}</span>
+                </label>
+                {% endfor %}
+            </div>
+
+            <label>
+                3. Escolha o Dia 
+                <span id="mes-ano-label" style="float: right; font-weight: normal; color: #666; font-size: 0.9em;"></span>
+            </label>
+            
+            <div class="date-selector-wrapper">
+                <button type="button" class="nav-btn calendar-trigger" onclick="abrirModalCalendario()">
+                    <i class="far fa-calendar-alt"></i>
+                </button>
+
+                <button type="button" class="nav-btn" onclick="moverScroll(-150)"><i class="fas fa-chevron-left"></i></button>
+                <div class="scroll-datas" id="container-datas"></div>
+                <button type="button" class="nav-btn" onclick="moverScroll(150)"><i class="fas fa-chevron-right"></i></button>
+            </div>
+            
+            <input type="hidden" name="data" id="input-data-real" required>
+
+            <label id="label-horarios" style="display:none;">4. Horários Disponíveis</label>
+            <div id="lista-horarios" class="horarios-grid"></div>
+            <input type="hidden" name="hora" id="input-hora" required>
+
+            <label>Observação (Opcional)</label>
+            <textarea name="observacao" rows="2" placeholder="Alguma preferência ou aviso especial?"></textarea>
+
+            <button type="submit" class="btn-confirmar" id="btn-submit">CONFIRMAR AGENDAMENTO</button>
+        </form>
+    </div>
+
+    <div class="modal-overlay" id="modal-calendario">
+        <div class="modal-content">
+            <div class="modal-header">
+                <strong>Navegar para...</strong>
+                <button type="button" class="btn-close" onclick="fecharModalCalendario()">&times;</button>
+            </div>
+            <div class="months-grid" id="grid-meses"></div>
+        </div>
+    </div>
+
+    <script>
+        const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+        const nomesMeses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+        let hojeReal = new Date();
+
+        window.onload = function() {
+            gerarDiasNoCarrossel(hojeReal, 30);
+        };
+
+        function gerarDiasNoCarrossel(dataInicio, quantidadeDias) {
+            const container = document.getElementById('container-datas');
+            container.innerHTML = ''; 
+            const labelMes = nomesMeses[dataInicio.getMonth()] + ' ' + dataInicio.getFullYear();
+            document.getElementById('mes-ano-label').innerText = labelMes;
+            
+            let dataBase = new Date(dataInicio);
+            dataBase.setHours(0,0,0,0);
+            let hojeSemHora = new Date(hojeReal);
+            hojeSemHora.setHours(0,0,0,0);
+
+            for (let i = 0; i < quantidadeDias; i++) {
+                let dataTemp = new Date(dataBase);
+                dataTemp.setDate(dataBase.getDate() + i);
+                if (dataTemp < hojeSemHora) continue;
+
+                const ano = dataTemp.getFullYear();
+                const mes = String(dataTemp.getMonth() + 1).padStart(2, '0');
+                const dia = String(dataTemp.getDate()).padStart(2, '0');
+                const dataFormatada = `${ano}-${mes}-${dia}`;
+                const isHoje = (dataTemp.getTime() === hojeSemHora.getTime());
+                const diaSemanaNome = isHoje ? 'Hoje' : diasSemana[dataTemp.getDay()];
+                
+                const card = document.createElement('div');
+                card.className = 'card-data';
+                card.innerHTML = `<div class="card-dia-semana">${diaSemanaNome}</div><div class="card-dia-numero">${dia}</div>`;
+                card.onclick = () => selecionarData(card, dataFormatada);
+                container.appendChild(card);
+            }
+        }
+        function moverScroll(pixels) { document.getElementById('container-datas').scrollBy({ left: pixels, behavior: 'smooth' }); }
+        
+        function abrirModalCalendario() {
+            const grid = document.getElementById('grid-meses'); grid.innerHTML = '';
+            let dataIteracao = new Date(hojeReal); dataIteracao.setDate(1);
+            for (let i = 0; i < 12; i++) {
+                const mesIndex = dataIteracao.getMonth();
+                const ano = dataIteracao.getFullYear();
+                const nomeMes = nomesMeses[mesIndex];
+                const btn = document.createElement('div'); btn.className = 'btn-month';
+                btn.innerHTML = `${nomeMes} <small>${ano}</small>`;
+                const dataParaFuncao = new Date(dataIteracao);
+                btn.onclick = () => selecionarMesNoModal(dataParaFuncao);
+                grid.appendChild(btn);
+                dataIteracao.setMonth(dataIteracao.getMonth() + 1);
+            }
+            document.getElementById('modal-calendario').style.display = 'flex';
+        }
+        function fecharModalCalendario() { document.getElementById('modal-calendario').style.display = 'none'; }
+        function selecionarMesNoModal(dataSelecionada) {
+            const ano = dataSelecionada.getFullYear(); const mes = dataSelecionada.getMonth();
+            const ultimoDiaDoMes = new Date(ano, mes + 1, 0).getDate();
+            gerarDiasNoCarrossel(dataSelecionada, ultimoDiaDoMes);
+            fecharModalCalendario();
+        }
+        function selecionarData(cardElement, dataValor) {
+            document.querySelectorAll('.card-data').forEach(c => c.classList.remove('selected'));
+            cardElement.classList.add('selected');
+            document.getElementById('input-data-real').value = dataValor;
+            buscarHorarios();
+        }
+        function resetarEBuscarHorarios() { if (document.getElementById('input-data-real').value) buscarHorarios(); }
+        async function buscarHorarios() {
+            const servicos = Array.from(document.querySelectorAll('input[name="servico_ids"]:checked')).map(c => c.value);
+            const data = document.getElementById('input-data-real').value;
+            const div = document.getElementById('lista-horarios'); const btn = document.getElementById('btn-submit');
+            div.innerHTML = ''; btn.style.display = 'none';
+            if (!servicos.length || !data) return;
+            document.getElementById('label-horarios').style.display = 'block';
+            div.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Verificando disponibilidade...</div>';
+            const res = await fetch(`/api/horarios_disponiveis/{{ loja.id }}?data=${data}&servico_ids=${servicos.join(',')}`);
+            const slots = await res.json();
+            div.innerHTML = '';
+            if (!slots.length) div.innerHTML = '<div class="loading" style="color:#c0392b">Sem horários livres.</div>';
+            else slots.forEach(hora => {
+                const el = document.createElement('div'); el.className = 'btn-hora'; el.innerText = hora;
+                el.onclick = () => {
+                    document.querySelectorAll('.btn-hora').forEach(b => b.classList.remove('selected'));
+                    el.classList.add('selected'); document.getElementById('input-hora').value = hora;
+                    btn.style.display = 'block'; btn.innerText = `CONFIRMAR (${hora})`;
+                };
+                div.appendChild(el);
+            });
+        }
+    </script>
+</body>
+</html>

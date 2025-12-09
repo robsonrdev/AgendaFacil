@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Painel - {{ loja.nome_loja }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f4f4f4; color: #333; }
+        
+        /* Navbar */
+        .navbar { background: #333; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .navbar h3 { margin: 0; display: flex; align-items: center; gap: 10px; }
+        .navbar a { color: white; text-decoration: none; background: #c0392b; padding: 8px 15px; border-radius: 4px; font-size: 14px; }
+        .navbar a:hover { background: #e74c3c; }
+
+        /* Layout */
+        .container { display: flex; gap: 20px; padding: 20px; max-width: 1400px; margin: 0 auto; flex-wrap: wrap; align-items: flex-start; }
+        .painel { background: white; padding: 25px; border-radius: 10px; flex: 1; min-width: 300px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        
+        h3 { border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-top: 0; color: #333; font-size: 1.2em; }
+        h4 { margin-top: 20px; margin-bottom: 10px; color: #555; }
+
+        /* Formulários e Inputs */
+        input, button, select { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 6px; border: 1px solid #ddd; box-sizing: border-box; font-size: 14px; }
+        button { background: #333; color: white; border: none; cursor: pointer; transition: 0.2s; font-weight: 600; }
+        button:hover { background: #555; }
+        
+        label { font-weight: bold; display: block; margin-bottom: 5px; color: #666; font-size: 0.9em; }
+
+        /* Link da Agenda */
+        .btn-agenda { display: block; text-align: center; background: #e8f5e9; padding: 12px; border-radius: 6px; margin-bottom: 20px; text-decoration: none; color: #2e7d32; font-weight: bold; border: 1px solid #c8e6c9; }
+        .btn-agenda:hover { background: #c8e6c9; }
+
+        /* Lista de Serviços */
+        ul { list-style: none; padding: 0; }
+        li { background: #f9f9f9; border: 1px solid #eee; padding: 10px; margin-bottom: 8px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; }
+        
+        .servico-info { flex: 1; }
+        .servico-actions { display: flex; align-items: center; gap: 5px; }
+        
+        /* Botões Pequenos (Editar/Excluir) */
+        .btn-icon { width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 4px; margin: 0; text-decoration: none; }
+        .btn-save { background: #27ae60; border:none; color:white; cursor:pointer;}
+        .btn-save:hover { background: #2ecc71; }
+        .btn-delete { background: #c0392b; color: white; }
+        .btn-delete:hover { background: #e74c3c; }
+        /* Botão Novo: Ticket Azul */
+        .btn-ticket { background: #3498db; color: white; }
+        .btn-ticket:hover { background: #2980b9; }
+
+        /* Input de Preço Inline */
+        .input-inline { width: 70px !important; margin: 0 !important; text-align: right; padding: 5px !important; height: 32px; }
+
+        /* Tabela */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { background: #f8f9fa; color: #555; font-weight: 600; }
+        td, th { padding: 12px; border-bottom: 1px solid #eee; text-align: left; vertical-align: top;}
+        tr:hover { background: #fafafa; }
+        .tag-valor { color: #27ae60; font-weight: bold; }
+        
+        /* Estilo da Observação */
+        .obs-text { font-size: 0.85em; color: #d35400; margin-top: 5px; display: block; font-style: italic; background: #fff5e6; padding: 4px; border-radius: 4px; width: fit-content; }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h3>
+            <i class="fas fa-store"></i> {{ loja.nome_loja }} 
+            <span style="font-size: 0.6em; font-weight: normal; opacity: 0.7; margin-left: 10px;">| Olá, {{ current_user.nome }}</span>
+        </h3>
+        <a href="/logout"><i class="fas fa-sign-out-alt"></i> Sair</a>
+    </div>
+
+    <div class="container">
+        
+        <div class="painel">
+            <h3>⚙️ Configuração do Negócio</h3>
+            
+            <a href="/{{ loja.slug }}" target="_blank" class="btn-agenda">
+                🔗 Abrir Minha Agenda Pública
+            </a>
+            
+            <h4>⏰ Horário de Funcionamento</h4>
+            <form action="/atualizar_horarios" method="POST" style="background: #fafafa; padding: 15px; border-radius: 8px; border: 1px solid #eee; margin-bottom: 20px;">
+                <div style="display: flex; gap: 10px;">
+                    <div style="flex: 1;">
+                        <label>Abertura:</label>
+                        <input type="time" name="abertura" value="{{ loja.abertura }}">
+                    </div>
+                    <div style="flex: 1;">
+                        <label>Fechamento:</label>
+                        <input type="time" name="fechamento" value="{{ loja.fechamento }}">
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" name="sabado" style="width: auto; margin: 0;" {% if loja.trabalha_sabado %}checked{% endif %}>
+                        Atende Sábado?
+                    </label>
+                    <br>
+                    <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" name="domingo" style="width: auto; margin: 0;" {% if loja.trabalha_domingo %}checked{% endif %}>
+                        Atende Domingo?
+                    </label>
+                </div>
+                <button type="submit">Salvar Horários</button>
+            </form>
+
+            <h4>🎨 Identidade Visual</h4>
+            <form action="/personalizar" method="POST" enctype="multipart/form-data">
+                
+                <label>Cor de Fundo da Tela:</label>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <input type="color" name="cor_fundo" value="{{ loja.cor_fundo }}" style="height: 42px; padding: 2px; flex: 1;">
+                </div>
+
+                <label>Cor dos Botões (Principal):</label>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <input type="color" name="cor_botao" value="{{ loja.cor_botao }}" style="height: 42px; padding: 2px; flex: 1;">
+                </div>
+
+                <label>Logo do Negócio (Opcional):</label>
+                <input type="file" name="img_logo" accept="image/*" style="background: white;">
+
+                <label>Imagem de Fundo (Opcional):</label>
+                <input type="file" name="img_fundo" accept="image/*" style="background: white;">
+                <p style="font-size: 11px; color: #666; margin-top:-5px;">A imagem substituirá a cor de fundo.</p>
+
+                <button type="submit" style="width: 100%; margin-top: 10px;">Salvar Aparência</button>
+            </form>
+        </div>
+
+        <div class="painel">
+            <h3>📋 Meus Serviços</h3>
+            
+            <form action="/adicionar_servico" method="POST" style="background: #f0f0f0; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <label>Cadastrar Novo Serviço:</label>
+                <input type="text" name="nome" placeholder="Ex: Consultoria / Manicure / Aula" required>
+                <div style="display:flex; gap:10px;">
+                    <input type="number" name="preco" placeholder="Valor (R$)" step="0.01" required>
+                    <input type="number" name="duracao" placeholder="Tempo (min)" required>
+                </div>
+                <button type="submit" style="background: #2980b9;">+ Criar Serviço</button>
+            </form>
+
+            <h4>Serviços Ativos:</h4>
+            <ul>
+                {% for s in servicos %}
+                    <li>
+                        <div class="servico-info">
+                            <strong>{{ s.nome }}</strong>
+                            <div style="font-size: 12px; color: #888;">⏱ {{ s.duracao }} min</div>
+                        </div>
+                        
+                        <div class="servico-actions">
+                            <form action="/atualizar_preco_servico/{{ s.id }}" method="POST" style="display: flex; align-items: center; margin: 0; gap: 5px;">
+                                <span style="font-size: 14px; color: #555;">R$</span>
+                                <input type="number" step="0.01" name="novo_preco" value="{{ s.preco }}" class="input-inline">
+                                <button type="submit" class="btn-icon btn-save" title="Salvar Preço"><i class="fas fa-check"></i></button>
+                            </form>
+                            
+                            <a href="/excluir_servico/{{ s.id }}" class="btn-icon btn-delete" onclick="return confirm('Tem certeza que deseja remover este serviço?')" title="Excluir"><i class="fas fa-trash"></i></a>
+                        </div>
+                    </li>
+                {% else %}
+                    <li style="text-align: center; color: #888; display: block;">Nenhum serviço cadastrado ainda.</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="painel" style="flex: 1.5;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 15px;">
+                <h3 style="border: none; margin: 0; padding: 0;">📅 Agenda de Clientes</h3>
+                <div style="background: #e8f5e9; padding: 8px 15px; border-radius: 20px; color: #2e7d32; font-weight: bold;">
+                    Total: R$ {{ faturamento }}
+                </div>
+            </div>
+
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 150px;">Data e Horário</th>
+                            <th>Cliente</th>
+                            <th>Serviços</th>
+                            <th>Valor</th>
+                            <th style="width: 80px;">Ações</th> </tr>
+                    </thead>
+                    <tbody>
+                        {% for a in agendamentos %}
+                        <tr>
+                            <td>
+                                <div style="font-weight: bold; color: #333; font-size: 0.95em; margin-bottom: 4px;">
+                                    {{ a.data_hora_inicio.strftime('%d/%m/%Y') }}
+                                </div>
+                                <div style="color: #666; font-size: 0.9em;">
+                                    <i class="far fa-clock" style="margin-right:4px;"></i>
+                                    {{ a.data_hora_inicio.strftime('%H:%M') }} - {{ a.data_hora_fim.strftime('%H:%M') }}
+                                </div>
+                            </td>
+                            <td>
+                                <strong>{{ a.cliente_nome }}</strong>
+                                {% if a.observacao %}
+                                    <span class="obs-text">
+                                        <i class="fas fa-comment-dots"></i> {{ a.observacao }}
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td style="font-size: 13px; color: #555;">{{ a.servico_nome }}</td>
+                            <td class="tag-valor">R$ {{ a.valor }}</td>
+                            <td style="white-space: nowrap;">
+                                <a href="/gerar_comprovante/{{ a.id }}" target="_blank" class="btn-icon btn-ticket" 
+                                   title="Ver Comprovante / Ticket" style="display: inline-flex; margin-right: 5px;">
+                                    <i class="fas fa-ticket-alt"></i>
+                                </a>
+
+                                <a href="/excluir_agendamento/{{ a.id }}" class="btn-icon btn-delete" 
+                                   onclick="return confirm('Cancelar agendamento de {{ a.cliente_nome }}?')" 
+                                   title="Cancelar Agendamento" style="display: inline-flex;">
+                                    <i class="fas fa-times"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" style="text-align: center; padding: 30px; color: #999;">
+                                <i class="far fa-calendar-alt" style="font-size: 24px; display: block; margin-bottom: 10px;"></i>
+                                Nenhum agendamento encontrado.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>
