@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Criar Barbearia SaaS</title>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f0f2f5; }
+        .card { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        input { display: block; margin: 10px 0; padding: 10px; width: 100%; box-sizing: border-box;}
+        button { background: #007bff; color: white; border: none; padding: 10px; width: 100%; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>🚀 Comece seu SaaS</h2>
+        <form action="/criar_loja" method="POST">
+            <label>Nome da Barbearia:</label>
+            <input type="text" name="nome" placeholder="Ex: Barber Shop do Zé" required>
+            
+            <label>Link Personalizado (Slug):</label>
+            <input type="text" name="slug" placeholder="barbearia-do-ze" required>
+            
+            <button type="submit">Criar Dashboard</button>
+        </form>
+    </div>
+</body>
+</html>
